@@ -12,7 +12,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LCMWebAPI.Controllers
 {
-
     public class LCMController : Controller
     {
         private ApplicationDbContext _context;
@@ -29,13 +28,12 @@ namespace LCMWebAPI.Controllers
 
         public IActionResult Index()
         {
-
             return View("Index");
         }
 
         public IActionResult Calculate()
         {
-           
+            Response.Headers.Add("Access-Control-Allow-Origin", "*");
 
             return View("Index");
         }
@@ -44,76 +42,84 @@ namespace LCMWebAPI.Controllers
         [HttpPost]
         public IActionResult Calculate(History obj)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return Json(new History());
+                if (!ModelState.IsValid)
+                {
+                    return Json(new History());
+                }
+
+
+                int[] arr = Array.ConvertAll(obj.Inputs.Split(','), a => Convert.ToInt32(a));
+
+                var userId = obj.UserId;
+
+                var watch = new System.Diagnostics.Stopwatch();
+                watch.Start();
+
+                long beforeAlloc = GC.GetTotalMemory(false);
+
+                long result = 1;
+
+                if (obj.AlgorithmTypeId == 1)
+                {
+                    result = lcmUsingBestTimeComplexity(arr, arr.Length);
+                }
+                else if (obj.AlgorithmTypeId == 2)
+                {
+                    result = lcmUsingBestSpaceComplexity(arr);
+                }
+                else
+                {
+                    result = lcmUsingOptimalComplexity(arr);
+                }
+
+
+                long afterAlloc = GC.GetTotalMemory(false);
+
+
+                watch.Stop();
+
+                var history = new History()
+                {
+                    Inputs = obj.Inputs,
+                    AlgorithmTypeId = obj.AlgorithmTypeId,
+
+                    //need to calculate
+                    TimeComplexity = Convert.ToString(watch.ElapsedMilliseconds) + " ms",
+                    SpaceComplexity = Convert.ToString(afterAlloc - beforeAlloc) + " B",
+
+                    Result = Convert.ToString(result),
+                    UserId = userId
+
+                };
+
+
+
+                _context.Histories.Add(history);
+
+
+
+                _context.SaveChanges();
+
+                if (!Response.Headers.ContainsKey("Access-Control-Allow-Origin"))
+                    Response.Headers.Add("Access-Control-Allow-Origin", "*");
+
+                return Json(history);
             }
-
-
-            int[] arr = Array.ConvertAll(obj.Inputs.Split(','), a => Convert.ToInt32(a));
-
-            var userId = 1;
-
-            var watch = new System.Diagnostics.Stopwatch();
-            watch.Start();
-
-            long beforeAlloc = GC.GetTotalMemory(false);
-
-            long result = 1;
-
-            if (obj.AlgorithmTypeId == 1)
+            catch (Exception e)
             {
-                result = lcmUsingBestTimeComplexity(arr, arr.Length);
+                Console.WriteLine(e);
+                return Content(e.ToString());
             }
-            else if (obj.AlgorithmTypeId == 2)
-            {
-                result = lcmUsingBestSpaceComplexity(arr);
-            }
-            else
-            {
-                result = lcmUsingOptimalComplexity(arr);
-            }
-
-
-            long afterAlloc = GC.GetTotalMemory(false);
-
-
-            watch.Stop();
-
-            var history = new History()
-            {
-                Inputs = obj.Inputs,
-                AlgorithmTypeId = obj.AlgorithmTypeId,
-
-                //need to calculate
-                TimeComplexity = Convert.ToString(watch.ElapsedMilliseconds) + " ms",
-                SpaceComplexity = Convert.ToString(afterAlloc - beforeAlloc) + " B",
-
-                Result = Convert.ToString(result),
-                UserId = userId
-
-            };
-
-
-
-            _context.Histories.Add(history);
-
-
-
-            _context.SaveChanges();
-
-
-
-            return Json(history);
+            
             //return View("Index", vm1);
         }
 
-        public JsonResult GetHistories()
+        public JsonResult GetHistories(int Id)
         {
-            var userId = 1;
-
-            var histories = _context.Histories.Include(m => m.AlgorithmType).Where(m => m.UserId == userId);
-
+            var histories = _context.Histories.Include(m => m.AlgorithmType).Where(m => m.UserId == Id);
+            Response.Headers.Add("Access-Control-Allow-Origin", "*");
             return Json(histories.ToList());
         }
 

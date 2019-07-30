@@ -1,0 +1,46 @@
+# For detailed explanation of how these config files should be used and created please see the developer guide here:
+#  http://docs.amazonwebservices.com/AWSToolkitVS/latest/UserGuide/tkv-deployment-tool.html
+
+# Edit the parameter line below to set the path to the deployment archive or use
+#     /DDeploymentPackage=value
+# on the awsdeploy.exe command line for more flexibility.
+# DeploymentPackage = <-- path to web deployment archive -->
+
+# Profile name is used to look up AWS access key and secret key
+# from either the SDK credentials store, or the credentials file found at
+# <userhome-directroy>\.aws\credentials. Alternatively the access key and 
+# secret key can be set using the command line parameters /DAWSAccessKey and /DAWSSecretKey.
+AWSProfileName = lcmapp
+KeyPair = rohit:lcmapp
+Region = ap-south-1
+SolutionStack = 64bit Windows Server 2016 v2.1.0 running IIS 10.0
+Template = ElasticBeanstalk
+UploadBucket = elasticbeanstalk-ap-south-1-367706622982
+
+Application.Name = LCMWebAPI
+
+aws:autoscaling:launchconfiguration.EC2KeyName = rohit:lcmapp
+aws:autoscaling:launchconfiguration.IamInstanceProfile = aws-elasticbeanstalk-ec2-role
+aws:autoscaling:launchconfiguration.InstanceType = t2.micro
+aws:autoscaling:launchconfiguration.SecurityGroups = sg-c40da7ab
+
+aws:ec2:vpc.Subnets = subnet-2ca27157
+aws:ec2:vpc.VPCId = vpc-837042eb
+
+aws:elasticbeanstalk:container:dotnet:apppool.Enable 32-bit Applications = False
+
+aws:elasticbeanstalk:environment.EnvironmentType = SingleInstance
+aws:elasticbeanstalk:environment.ServiceRole = aws-elasticbeanstalk-service-role
+
+aws:elasticbeanstalk:healthreporting:system.SystemType = basic
+
+aws:elasticbeanstalk:xray.XRayEnabled = false
+
+Container.ApplicationHealthcheckPath = /
+Container.Enable32BitApplications = False
+Container.InstanceType = t2.micro
+Container.TargetRuntime = netcoreapp2.1
+
+Environment.CNAME = lcmwebapi-prod
+Environment.Name = LCMWebAPI-prod
+
